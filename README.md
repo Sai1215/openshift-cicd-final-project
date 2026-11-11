@@ -1,100 +1,64 @@
-# OpenShift CI/CD Final Project
+# Product Catalogue Microservice
 
-A sample Python Flask application demonstrating continuous integration with GitHub Actions and a complete Tekton/OpenShift Pipelines flow.
+A Flask, SQLAlchemy and Factory Boy product catalogue backend for an e-commerce application. It includes REST endpoints, unit and route tests, and Selenium/Behave BDD scenarios.
 
-## Project structure
+## Technology
 
-- `app.py` — Flask application with home and health endpoints.
-- `tests/test_app.py` — unit tests using nose.
-- `.github/workflows/workflow.yml` — flake8 linting and nose tests in GitHub Actions.
-- `.tekton/tasks.yml` — cleanup, git-clone, flake8, nose, buildah, and openshift-client Tasks.
-- `.tekton/pipeline.yml` — Pipeline named `oc-pipelines-oc-final`.
-- `.tekton/pvc.yml` — 1Gi workspace PVC using storage class `skills-network-learner`.
-- `.tekton/pipelinerun.yml` — PipelineRun named `oc-pipelines-oc-green`.
-- `k8s/` — OpenShift Deployment, Service, and Route manifests.
-- `Dockerfile` — container image for the Flask application.
+- Python 3.10+
+- Flask and Flask-SQLAlchemy
+- Factory Boy and Faker for fake product data
+- Nose and unittest for automated tests
+- Behave, Gherkin and Selenium for BDD browser tests
 
 ## Run locally
 
 ```bash
 python -m pip install -r requirements.txt
-flake8 app.py tests
-PYTHONPATH=. nosetests -v
 python app.py
 ```
 
-The application listens on port 8000. Visiting `/` writes `SERVICERUNNING` to the application log; `/health` returns the readiness response.
+The application listens on port 8000. Open http://127.0.0.1:8000/ to use the admin catalogue.
+
+## REST API
+
+- POST /api/products — create a product
+- GET /api/products — list all products
+- GET /api/products/{id} — read a product
+- PUT /api/products/{id} — update a product
+- DELETE /api/products/{id} — delete a product
+- GET /api/products/name/{name} — find products by name
+- GET /api/products/category/{category} — find products by category
+- GET /api/products/availability/{true|false} — find products by availability
+
+Product fields: name, description, price, category and available.
+
+## Test the service
+
+```bash
+flake8 app.py service tests features
+PYTHONPATH=. nosetests -v
+```
+
+## Run BDD scenarios
+
+Install a Chrome/Chromium browser and ensure Selenium can obtain a matching driver, then run:
+
+```bash
+behave
+```
+
+BDD scenarios cover reading, updating, deleting, listing all products, and searching by name, category and availability.
+
+## Main submission files
+
+- tests/factories.py
+- tests/test_models.py
+- tests/test_routes.py
+- service/routes.py
+- features/steps/load_steps.py
+- features/products.feature
+- features/steps/web_steps.py
 
 ## GitHub Actions
 
-Pushes and pull requests to `main` run two jobs: flake8 linting and nose unit tests. The latest validated successful run is in the repository's Actions tab.
-
-## Apply the OpenShift Pipeline
-
-Log in to your OpenShift course cluster, select your course project, and run these commands from the repository root:
-
-```bash
-oc apply -f .tekton/tasks.yml
-oc apply -f .tekton/pvc.yml
-oc apply -f .tekton/pipeline.yml
-```
-
-The Pipeline uses these ordered tasks:
-
-1. `cleanup`
-2. `git-clone`
-3. `flake8`
-4. `nose`
-5. `buildah`
-6. `deploy` (uses the `openshift-client` Task)
-
-## Configure permissions and run
-
-The Pipeline's `buildah` Task pushes to the OpenShift internal image registry, and the `openshift-client` Task creates a Deployment, Service, and Route. Give the Pipeline service account the required permissions in the selected project:
-
-```bash
-oc policy add-role-to-user system:image-builder -z pipeline
-oc policy add-role-to-user edit -z pipeline
-```
-
-Set the image URL to the current project's internal registry path, then create the PipelineRun:
-
-```bash
-PROJECT=$(oc project -q)
-IMAGE_URL=image-registry.openshift-image-registry.svc:5000/$PROJECT/openshift-cicd-app:latest
-sed -i "s|YOUR_PROJECT|$PROJECT|g" .tekton/pipelinerun.yml
-sed -i "s|image-registry.openshift-image-registry.svc:5000/$PROJECT/openshift-cicd-app:latest|$IMAGE_URL|g" .tekton/pipelinerun.yml
-oc apply -f .tekton/pipelinerun.yml
-oc get pipelinerun oc-pipelines-oc-green
-oc get tasks
-oc get pods
-oc get route openshift-cicd-app
-```
-
-If your course namespace does not allow the Pipeline service account to push images or deploy workloads, ask the course administrator to grant the appropriate permissions. Some clusters may also restrict Buildah execution; use the cluster's approved Buildah Task/SCC configuration if required.
-
-## Application logs
-
-After the PipelineRun succeeds:
-
-```bash
-oc logs deployment/openshift-cicd-app --all-containers=true
-ROUTE=$(oc get route openshift-cicd-app -o jsonpath='{.spec.host}')
-curl -i "http://$ROUTE/"
-oc logs deployment/openshift-cicd-app --all-containers=true --since=10m
-```
-
-Use the Route shown by `oc get route openshift-cicd-app` to test the app and its `/health` endpoint.
-
-## Evidence checklist
-
-- [ ] README URL
-- [ ] `.github/workflows/workflow.yml` URL
-- [ ] `.tekton/tasks.yml` URL
-- [ ] Screenshot of PVC details (save as `oc-pipelines-console-pvc-details.png`)
-- [ ] Successful GitHub Actions terminal output
-- [ ] Screenshot of Pipeline `oc-pipelines-oc-final` details, showing cleanup, git-clone, flake8, nose, buildah, and deploy
-- [ ] Screenshot of successful PipelineRun `oc-pipelines-oc-green`
-- [ ] OpenShift application logs
-
-OpenShift screenshots and application logs must be captured from your real course cluster; they are not fabricated by this repository.
+The workflow at .github/workflows/workflow.yml runs flake8 and the Nose unit-test suite on pushes and pull requests to main.
