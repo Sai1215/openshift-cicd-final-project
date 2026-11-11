@@ -115,7 +115,7 @@ def home():
 
     categories = sorted({item.category for item in Product.list_all()})
     flash_message = request.args.get("message", "")
-    if not flash_message and any((name, category, available)):
+    if not flash_message and (request.args.get("search") == "1" or any((name, category, available))):
         flash_message = "Success"
 
     return render_template(
