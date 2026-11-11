@@ -25,12 +25,13 @@ spec:
     - name: source
   steps:
     - name: run-nose
-      image: registry.access.redhat.com/ubi9/python-311:latest
+      image: python:3.10-slim
       workingDir: $(workspaces.source.path)
       script: |
         #!/usr/bin/env bash
         set -e
-        python -m pip install --user -r requirements.txt
-        python -m pip install --user nose
-        export PATH="$HOME/.local/bin:$PATH"
+        python -m venv .venv
+        . .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
         nosetests -v
