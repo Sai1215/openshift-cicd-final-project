@@ -3,7 +3,7 @@ kind: Task
 metadata:
   name: cleanup
 spec:
-  description: Remove the previous workspace contents before a test run.
+  description: Clean the shared workspace before cloning source code.
   workspaces:
     - name: source
   steps:
@@ -18,9 +18,9 @@ spec:
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: clone-source
+  name: git-clone
 spec:
-  description: Clone the application source into the shared workspace.
+  description: Clone the GitHub project into the shared workspace.
   params:
     - name: repo-url
       type: string
@@ -30,7 +30,7 @@ spec:
   workspaces:
     - name: source
   steps:
-    - name: git-clone
+    - name: clone
       image: alpine/git:latest
       workingDir: $(workspaces.source.path)
       script: |
@@ -41,21 +41,82 @@ spec:
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
-  name: nose
+  name: flake8
 spec:
-  description: Install Python dependencies and run the project's unit tests.
+  description: Install Python requirements and lint the application with flake8.
   workspaces:
     - name: source
   steps:
-    - name: run-nose
+    - name: lint
       image: python:3.10-slim
       workingDir: $(workspaces.source.path)
       script: |
         #!/usr/bin/env bash
         set -e
-        python -m venv .venv
-        . .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        flake8 app.py tests
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: nose
+spec:
+  description: Run unit tests with nose.
+  workspaces:
+    - name: source
+  steps:
+    - name: unit-tests
+      image: python:3.10-slim
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         export PYTHONPATH="$PWD"
         nosetests -v
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: buildah
+spec:
+  description: Build and push the application image to the OpenShift internal registry.
+  params:
+    - name: image-url
+      type: string
+  workspaces:
+    - name: source
+  steps:
+    - name: build-and-push
+      image: registry.access.redhat.com/ubi9/buildah:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        buildah --storage-driver=vfs bud --format docker -f Dockerfile -t "$(params.image-url)" .
+        buildah --storage-driver=vfs push --tls-verify=false --authfile /tekton/home/.docker/config.json "$(params.image-url)" "docker://$(params.image-url)"
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: openshift-client
+spec:
+  description: Deploy the built image to OpenShift and expose it with a Route.
+  params:
+    - name: image-url
+      type: string
+  workspaces:
+    - name: source
+  steps:
+    - name: deploy
+      image: quay.io/openshift/origin-cli:4.16
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/usr/bin/env bash
+        set -e
+        sed "s|__IMAGE_URL__|$(params.image-url)|g" k8s/deployment.yml | oc apply -f -
+        oc apply -f k8s/service.yml
+        oc apply -f k8s/route.yml
+        oc rollout status deployment/openshift-cicd-app --timeout=180s
