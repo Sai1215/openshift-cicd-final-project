@@ -10,10 +10,7 @@ class ApplicationTests(unittest.TestCase):
     def test_home_endpoint(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.get_json(),
-            {"message": "OpenShift CI/CD sample application"},
-        )
+        self.assertIn(b"Product Catalogue", response.data)
 
     def test_health_endpoint(self):
         response = self.client.get("/health")
