@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: oc-pipelines-oc-green
+spec:
+  pipelineRef:
+    name: oc-pipelines-oc-final
+  params:
+    - name: repo-url
+      value: https://github.com/Sai1215/openshift-cicd-final-project.git
+    - name: revision
+      value: main
+  workspaces:
+    - name: shared
+      persistentVolumeClaim:
+        claimName: oc-pipelines-source-pvc
