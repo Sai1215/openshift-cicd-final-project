@@ -11,9 +11,15 @@ def _products_response(products):
 
 def _availability_value(value):
     normalized = value.strip().lower()
-    if normalized not in {"true", "false", "1", "0", "yes", "no", "available", "unavailable"}:
+    allowed = {"true", "false", "1", "0", "yes", "no", "available", "unavailable"}
+    if normalized not in allowed:
         abort(400, description="Availability must be true or false.")
     return normalized in {"true", "1", "yes", "available"}
+
+
+@products_bp.get("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 
 @products_bp.post("/api/products")
@@ -68,7 +74,9 @@ def list_by_category(category):
 
 @products_bp.get("/api/products/availability/<string:availability>")
 def list_by_availability(availability):
-    return _products_response(Product.find_by_availability(_availability_value(availability)))
+    return _products_response(
+        Product.find_by_availability(_availability_value(availability))
+    )
 
 
 @products_bp.get("/")
@@ -79,7 +87,10 @@ def home():
 
     products = Product.find_by_name(query) if query else Product.list_all()
     if category:
-        products = [item for item in products if item.category.lower() == category.lower()]
+        products = [
+            item for item in products
+            if item.category.lower() == category.lower()
+        ]
     if availability in {"true", "false"}:
         expected = availability == "true"
         products = [item for item in products if item.available is expected]
