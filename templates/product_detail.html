@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ product.name }}</title>
+</head>
+<body>
+  <main>
+    <a href="/">Back to catalogue</a>
+    <h1 id="product-name">{{ product.name }}</h1>
+    <p>{{ product.description }}</p>
+    <p>Category: {{ product.category }}</p>
+    <p>Price: ${{ "%.2f"|format(product.price) }}</p>
+    <p>Availability: {{ "Available" if product.available else "Unavailable" }}</p>
+    <form method="post" action="{{ url_for('products.update_from_ui', product_id=product.id) }}">
+      <label for="name">Product name</label>
+      <input id="name" name="name" value="{{ product.name }}" required>
+      <button id="save-update" type="submit">Save changes</button>
+    </form>
+    <form method="post" action="{{ url_for('products.delete_from_ui', product_id=product.id) }}">
+      <button id="delete-product" type="submit">Delete product</button>
+    </form>
+  </main>
+</body>
+</html>
