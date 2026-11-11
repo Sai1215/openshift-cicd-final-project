@@ -27,6 +27,7 @@
   {% endif %}
 
   <form id="search-form" method="get" action="/">
+    <input type="hidden" name="search" value="1">
     <label>Product Name
       <input id="search_name" name="name" placeholder="Search by name" value="{{ search_name }}">
     </label>
