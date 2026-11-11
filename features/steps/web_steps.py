@@ -84,3 +84,16 @@ def product_in_results(context, name):
 @then('I should not see product "{name}" in the results')
 def product_not_in_results(context, name):
     assert f'data-product-name="{name}"' not in context.driver.page_source
+
+
+@when('I click the "{button}" button')
+def click_button(context, button):
+    context.driver.find_element(
+        By.XPATH,
+        f'//button[normalize-space()="{button}"]',
+    ).click()
+
+
+@then('I should see the message "{message}"')
+def see_message(context, message):
+    assert message in context.driver.page_source
