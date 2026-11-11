@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product Catalogue</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:2rem;background:#f5f7fa;color:#172033}
+    main{max-width:960px;margin:auto}
+    form.filters,.product{background:#fff;border:1px solid #dce2ea;border-radius:10px;padding:1rem;margin:1rem 0}
+    form.filters{display:flex;gap:.7rem;flex-wrap:wrap}
+    input,select,button{padding:.65rem;border:1px solid #b7c1cf;border-radius:6px}
+    button{background:#234f9b;color:#fff;cursor:pointer}
+    .product{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+    a{color:#184d9a;font-weight:bold}
+    .muted{color:#64748b}
+  </style>
+</head>
+<body>
+<main>
+  <h1>Product Catalogue</h1>
+  <p class="muted">Administrator product management</p>
+  <form class="filters" id="search-form" method="get" action="/">
+    <input name="q" aria-label="Search name" placeholder="Search by name" value="{{ query }}">
+    <select name="category" aria-label="Category">
+      <option value="">All categories</option>
+      {% for category in categories %}
+      <option value="{{ category }}" {% if selected_category == category %}selected{% endif %}>{{ category }}</option>
+      {% endfor %}
+    </select>
+    <select name="availability" aria-label="Availability">
+      <option value="">Any availability</option>
+      <option value="true" {% if selected_availability == "true" %}selected{% endif %}>Available</option>
+      <option value="false" {% if selected_availability == "false" %}selected{% endif %}>Unavailable</option>
+    </select>
+    <button type="submit">Search</button>
+  </form>
+  <section id="product-list">
+    {% for product in products %}
+    <article class="product" data-product-name="{{ product.name }}">
+      <div>
+        <a href="{{ url_for('products.detail', product_id=product.id) }}">{{ product.name }}</a>
+        <p class="muted">{{ product.category }} · ${{ "%.2f"|format(product.price) }} · {{ "Available" if product.available else "Unavailable" }}</p>
+      </div>
+      <form method="post" action="{{ url_for('products.delete_from_ui', product_id=product.id) }}">
+        <button type="submit" aria-label="Delete {{ product.name }}">Delete</button>
+      </form>
+    </article>
+    {% else %}
+    <p id="empty-state">No products found.</p>
+    {% endfor %}
+  </section>
+</main>
+</body>
+</html>
