@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: openshift-cicd-app
+spec:
+  selector:
+    app: openshift-cicd-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
