@@ -1,6 +1,7 @@
 from behave import then, when
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
 @when('I visit the "{page}"')
@@ -11,89 +12,81 @@ def visit_page(context, page):
     context.driver.get(context.base_url + pages[page])
 
 
-@when('I open the product "{name}"')
-def open_product(context, name):
-    context.driver.find_element(By.LINK_TEXT, name).click()
+@when('I enter "{value}" into the "{field}" field')
+def enter_field(context, value, field):
+    fields = {
+        "Search Name": "search_name",
+        "Name": "product_name",
+        "Product ID": "product_id",
+    }
+    element = context.driver.find_element(By.ID, fields[field])
+    element.clear()
+    element.send_keys(value)
 
 
-@then('I should see the product details for "{name}"')
-def see_product_details(context, name):
-    heading = context.driver.find_element(By.ID, "product-name")
-    assert heading.text == name
+@when('I select "{value}" from the "{field}" dropdown')
+def select_dropdown(context, value, field):
+    fields = {
+        "Category": "category",
+        "Available": "available",
+    }
+    element = context.driver.find_element(By.ID, fields[field])
+    Select(element).select_by_visible_text(value)
 
 
-@when('I update the product "{old_name}" to "{new_name}"')
-def update_product(context, old_name, new_name):
-    context.driver.get(context.base_url + "/")
-    context.driver.find_element(By.LINK_TEXT, old_name).click()
-    field = context.driver.find_element(By.NAME, "name")
-    field.clear()
-    field.send_keys(new_name)
-    context.driver.find_element(By.ID, "save-update").click()
-
-
-@when('I delete the product "{name}"')
-def delete_product(context, name):
-    context.driver.get(context.base_url + "/")
-    product = context.driver.find_element(
-        By.CSS_SELECTOR,
-        f'[data-product-name="{name}"]',
-    )
-    product.find_element(By.CSS_SELECTOR, "button").click()
-
-
-@then('the product "{name}" should not be listed')
-def product_not_listed(context, name):
-    assert name not in context.driver.page_source
-
-
-@then("I should see all three products")
-def see_all_products(context):
-    for name in ("Red Apple", "Orange Juice", "Green Tea"):
-        assert name in context.driver.page_source
-
-
-@when('I search for product "{name}"')
-def search_by_name(context, name):
-    field = context.driver.find_element(By.NAME, "q")
-    field.clear()
-    field.send_keys(name)
-    context.driver.find_element(By.CSS_SELECTOR, "#search-form button").click()
-
-
-@when('I filter products by category "{category}"')
-def filter_by_category(context, category):
-    Select(context.driver.find_element(By.NAME, "category")).select_by_visible_text(category)
-    context.driver.find_element(By.CSS_SELECTOR, "#search-form button").click()
-
-
-@when('I filter products by availability "{availability}"')
-def filter_by_availability(context, availability):
-    Select(context.driver.find_element(By.NAME, "availability")).select_by_value(availability)
-    context.driver.find_element(By.CSS_SELECTOR, "#search-form button").click()
-
-
-@then('I should see product "{name}" in the results')
-def product_in_results(context, name):
-    context.driver.find_element(
-        By.CSS_SELECTOR,
-        f'[data-product-name="{name}"]',
-    )
-
-
-@then('I should not see product "{name}" in the results')
-def product_not_in_results(context, name):
-    assert f'data-product-name="{name}"' not in context.driver.page_source
-
-
-@when('I click the "{button}" button')
-def click_button(context, button):
+@when('I press the "{button}" button')
+def press_button(context, button):
     context.driver.find_element(
         By.XPATH,
         f'//button[normalize-space()="{button}"]',
     ).click()
 
 
+@when('I copy the product ID for "{name}"')
+def copy_product_id(context, name):
+    result = context.driver.find_element(
+        By.CSS_SELECTOR,
+        f'[data-product-name="{name}"] .product-id',
+    )
+    context.copied_product_id = result.text.strip()
+
+
+@when('I paste the copied ID into the "{field}" field')
+def paste_product_id(context, field):
+    if field != "Product ID":
+        raise AssertionError(f"Unsupported target field: {field}")
+    element = context.driver.find_element(By.ID, "product_id")
+    element.clear()
+    element.send_keys(context.copied_product_id)
+
+
+@then('I should see "{text}" in the search results')
+def verify_text_present(context, text):
+    results = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.ID, "search_results"))
+    )
+    assert text in results.text, f"Expected '{text}' in search results: {results.text}"
+
+
+@then('I should not see "{text}" in the search results')
+def verify_text_absent(context, text):
+    results = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.ID, "search_results"))
+    )
+    assert text not in results.text, f"Did not expect '{text}' in search results: {results.text}"
+
+
 @then('I should see the message "{message}"')
 def see_message(context, message):
-    assert message in context.driver.page_source
+    flash_message = WebDriverWait(context.driver, 10).until(
+        EC.visibility_of_element_located((By.ID, "flash_message"))
+    )
+    assert message in flash_message.text
+
+
+@then('I should see the product details for "{name}"')
+def see_product_details(context, name):
+    results = WebDriverWait(context.driver, 10).until(
+        EC.presence_of_element_located((By.ID, "search_results"))
+    )
+    assert name in results.text
