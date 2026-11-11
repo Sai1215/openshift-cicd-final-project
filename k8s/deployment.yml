@@ -17,7 +17,7 @@ spec:
           image: __IMAGE_URL__
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8000
           readinessProbe:
             httpGet:
               path: /health
