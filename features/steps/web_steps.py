@@ -14,6 +14,8 @@ def visit_page(context, page):
 
 @when('I enter "{value}" into the "{field}" field')
 def enter_field(context, value, field):
+    if field == "Search Name":
+        context.driver.get(context.base_url + "/")
     fields = {
         "Search Name": "search_name",
         "Name": "product_name",
