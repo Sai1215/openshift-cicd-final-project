@@ -23,7 +23,7 @@ PYTHONPATH=. nosetests -v
 python app.py
 ```
 
-The application listens on port 8080. Visit `/health` for its health response.
+The application listens on port 8000. Visiting `/` writes `SERVICERUNNING` to the application log; `/health` returns the readiness response.
 
 ## GitHub Actions
 
@@ -79,6 +79,9 @@ After the PipelineRun succeeds:
 
 ```bash
 oc logs deployment/openshift-cicd-app --all-containers=true
+ROUTE=$(oc get route openshift-cicd-app -o jsonpath='{.spec.host}')
+curl -i "http://$ROUTE/"
+oc logs deployment/openshift-cicd-app --all-containers=true --since=10m
 ```
 
 Use the Route shown by `oc get route openshift-cicd-app` to test the app and its `/health` endpoint.
