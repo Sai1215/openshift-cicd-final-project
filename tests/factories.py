@@ -11,6 +11,7 @@ class ProductFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = db.session
         sqlalchemy_session_persistence = "commit"
 
+    id = factory.Sequence(lambda number: number + 1)
     name = factory.Sequence(lambda number: f"Product {number}")
     description = factory.Faker("sentence")
     price = factory.Faker("pyfloat", left_digits=2, right_digits=2, positive=True)
