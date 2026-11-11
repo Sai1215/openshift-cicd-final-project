@@ -30,6 +30,9 @@ Feature: Product catalogue administration
     And I enter "Updated Red Apple" into the "Name" field
     And I press the "Update" button
     Then I should see the message "Success"
+    When I paste the copied ID into the "Product ID" field
+    And I press the "Retrieve" button
+    Then I should see "Updated Red Apple" in the search results
     When I press the "Clear" button
     And I enter "Updated Red Apple" into the "Search Name" field
     And I press the "Search" button
