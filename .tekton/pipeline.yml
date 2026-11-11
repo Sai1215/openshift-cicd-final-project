@@ -1,0 +1,43 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: oc-pipelines-oc-final
+spec:
+  description: Clean the workspace, clone the GitHub project, and run nose tests.
+  params:
+    - name: repo-url
+      type: string
+      default: https://github.com/Sai1215/openshift-cicd-final-project.git
+    - name: revision
+      type: string
+      default: main
+  workspaces:
+    - name: shared
+  tasks:
+    - name: cleanup
+      taskRef:
+        name: cleanup
+      workspaces:
+        - name: source
+          workspace: shared
+    - name: clone-source
+      runAfter:
+        - cleanup
+      taskRef:
+        name: clone-source
+      params:
+        - name: repo-url
+          value: $(params.repo-url)
+        - name: revision
+          value: $(params.revision)
+      workspaces:
+        - name: source
+          workspace: shared
+    - name: nose
+      runAfter:
+        - clone-source
+      taskRef:
+        name: nose
+      workspaces:
+        - name: source
+          workspace: shared
