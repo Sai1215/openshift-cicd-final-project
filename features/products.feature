@@ -11,7 +11,8 @@ Feature: Product catalogue administration
       | Green Tea    | Organic green tea   | 2.50  | Drinks   | true      |
 
   Scenario: Read a product
-    When I open the product "Red Apple"
+    When I visit the "Home Page"
+    And I open the product "Red Apple"
     Then I should see the product details for "Red Apple"
 
   Scenario: Update a product
