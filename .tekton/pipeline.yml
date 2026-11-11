@@ -3,7 +3,7 @@ kind: Pipeline
 metadata:
   name: oc-pipelines-oc-final
 spec:
-  description: Clean the workspace, clone the GitHub project, and run nose tests.
+  description: Clean, clone, lint, test, build, and deploy the sample application.
   params:
     - name: repo-url
       type: string
@@ -11,6 +11,9 @@ spec:
     - name: revision
       type: string
       default: main
+    - name: image-url
+      type: string
+      description: Full image URL in this OpenShift project's internal image registry.
   workspaces:
     - name: shared
   tasks:
@@ -20,11 +23,11 @@ spec:
       workspaces:
         - name: source
           workspace: shared
-    - name: clone-source
+    - name: git-clone
       runAfter:
         - cleanup
       taskRef:
-        name: clone-source
+        name: git-clone
       params:
         - name: repo-url
           value: $(params.repo-url)
@@ -33,11 +36,41 @@ spec:
       workspaces:
         - name: source
           workspace: shared
+    - name: flake8
+      runAfter:
+        - git-clone
+      taskRef:
+        name: flake8
+      workspaces:
+        - name: source
+          workspace: shared
     - name: nose
       runAfter:
-        - clone-source
+        - flake8
       taskRef:
         name: nose
+      workspaces:
+        - name: source
+          workspace: shared
+    - name: buildah
+      runAfter:
+        - nose
+      taskRef:
+        name: buildah
+      params:
+        - name: image-url
+          value: $(params.image-url)
+      workspaces:
+        - name: source
+          workspace: shared
+    - name: deploy
+      runAfter:
+        - buildah
+      taskRef:
+        name: openshift-client
+      params:
+        - name: image-url
+          value: $(params.image-url)
       workspaces:
         - name: source
           workspace: shared
