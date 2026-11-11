@@ -10,6 +10,8 @@ spec:
       value: https://github.com/Sai1215/openshift-cicd-final-project.git
     - name: revision
       value: main
+    - name: image-url
+      value: image-registry.openshift-image-registry.svc:5000/YOUR_PROJECT/openshift-cicd-app:latest
   workspaces:
     - name: shared
       persistentVolumeClaim:
