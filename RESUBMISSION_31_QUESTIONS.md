@@ -293,6 +293,18 @@ def delete(product_id):
 ## Question 19 — Service LIST ALL / NAME / CATEGORY / AVAILABILITY
 
 ```python
+def _products_response(products):
+    return jsonify([product.to_dict() for product in products])
+
+
+def _availability_value(value):
+    normalized = str(value).strip().lower()
+    allowed = {"true", "false", "1", "0", "yes", "no", "available", "unavailable"}
+    if normalized not in allowed:
+        abort(400, description="Availability must be true or false.")
+    return normalized in {"true", "1", "yes", "available"}
+
+
 @products_bp.get("/api/products")
 def list_all():
     name = request.args.get("name")
