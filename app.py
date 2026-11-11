@@ -1,18 +1,9 @@
-from flask import Flask, jsonify
+import os
 
-app = Flask(__name__)
+from service import create_app
 
-
-@app.route("/")
-def home():
-    app.logger.info("SERVICERUNNING")
-    return jsonify({"message": "OpenShift CI/CD sample application"})
-
-
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
+app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
